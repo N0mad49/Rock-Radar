@@ -380,7 +380,7 @@
 
         // 全局配置参数
         const CONFIG = {
-            INTRO_WAIT_TIME: 5000, // 开头准备页等待时间 (ms)
+            INTRO_WAIT_TIME: 1000, // 开头准备页等待时间 (ms)
             // 雷达图各个维度的名称
             DIM_NAMES: ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"],
             // 六个维度的满分基准线，每个维度可单独控制
@@ -388,7 +388,22 @@
             // 六个维度的允许最低分数，每个维度可单独控制
             MIN_SCORES: [0, 0, 0, 0, 0, 0], 
             ANIM_DURATION: 1500, // 雷达各项数值生长动画的过渡时间 (ms)
+            // 是否启用特殊的数值格式化（如雷达图的实际值在 11-19 时显示为 "10+"）
+            ENABLE_SPECIAL_FORMAT: true, 
         };
+
+        const mvplist = ["The Beatles"];
+
+        // ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"]
+        // 可选属性: 
+        // colorIndex: 对应 COLOR_PRESETS 索引 (0-19)
+        // duration: 该乐队持续显示时间 (ms)，默认 5000ms
+        const namelist = [
+{ name: "The Beatles", points: [15, 15, 10, 20, 10, 10], desc: "无需多言", colorIndex: 12 ,duration: 6000 },
+{ name: "Nirvana", points: [9, 8, 9, 12, 9, 7], desc: "xqcl" },
+{ name: "Radiohead", points: [13, 8, 9, 10, 8, 12], desc: "rym亲爹。我一直是idm粉丝啊" },
+{ name: "Bob Dylan", points: [14, 4, 15, 14, 1, 2], desc: "诺贝尔文学奖得主的含金量，要歌词有歌词，唱功有歌词" },
+        ];
 
         function getNextColor() {
             const c = colorPool[colorIndex];
@@ -396,95 +411,6 @@
             if (colorIndex === 0) colorPool.sort(() => Math.random() - 0.5);
             return c;
         }
-
-        const mvplist = ["The Beatles", "Pink Floyd", "Led Zeppelin", "Queen","Live Aid限定飞艇","King Crimson","MC赵小六","滚石","Yes",
-            "David Bowie","Bob Dylan","万能青年旅店"
-         ];
-
-        // ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"]
-        // 可选属性: 
-        // colorIndex: 对应 COLOR_PRESETS 索引 (0-19)
-        // duration: 该乐队持续显示时间 (ms)，默认 5000ms
-        const namelist = [
-
-{ name: "The Beatles", points: [15, 15, 10, 20, 10, 10], desc: "无需多言", colorIndex: 12 },
-{ name: "Nirvana", points: [9, 8, 9, 12, 9, 7], desc: "xqcl" },
-{ name: "Guns N' Roses", points: [4, 9, 8, 10, 10, 8], desc: "所有的战争都是内战，因为所有的人类都是同胞。" },
-{ name: "Radiohead", points: [13, 8, 9, 10, 8, 12], desc: "rym亲爹。我一直是idm粉丝啊" },
-{ name: "Bob Dylan", points: [14, 4, 15, 14, 1, 2], desc: "诺贝尔文学奖得主的含金量，要歌词有歌词，唱功有歌词" },
-{ name: "U2", points: [3, 3, 3, 9, 3, 3], desc: "我朋友这么评的（笑）" },
-{ name: "Black Sabbath", points: [13, 6, 5, 14, 9, 9], desc: "彼得帕克被蜘蛛咬了，他是蜘蛛侠。蝙蝠被ozzy咬了，那他岂不是ozzy侠" },
-{ name: "罗大佑", points: [7, 9, 15, 9, 7, 7], desc: "😡黑手！😡黑手！😡黑手！ ✋羅大佑最新專輯！😎 滾石唱片！💿現在發行！😃🎶 😎🎸 想欲予阮出外的人🏍️飛向一個繁華世界🦆🌏 一站一站過過停停🚄男兒的天外天☁️😁" },
-{ name: "ACDC", points: [1, 7, 2, 12, 8, 7], desc: "Gemini：创新可以给到 1 分。毕竟全世界都知道 ACDC 只有一张专辑，只是换了 17 个封面。" },
-{ name: "The Clash", points: [8, 7, 9, 8, 7, 6], desc: "封面像那个学科特柯本砸琴的小孩哥" },
-{ name: "有刺无刺 (GBC)", points: [1, 6, 7, 4, 7, 6], desc: "再见了刺小妹👋" },
-{ name: "Joy Division", points: [10, 6, 6, 9, 5, 5], desc: "封面王朝了" },
-{ name: "Rush", points: [9, 4, 5, 8, 8, 11], desc: "时间会证明rush" },
-{ name: "Deep Purple", points: [11, 7, 6, 9, 9, 10], desc: "Smoke on the Water神秘riff", colorIndex: 13 },
-{ name: "Beyond", points: [6, 9, 8, 9, 9, 6], desc: "童年回忆" },
-
-
-{ name: "Queen", points: [10, 10, 9, 15, 15, 10], desc: "我相信没有人没听过他们的歌" },
-{ name: "The Kinks", points: [10, 8, 8, 10, 7, 6], desc: "d指导锐评：兄弟内斗比Oasis早了几十年" },
-{ name: "Oasis", points: [5, 8, 3, 9, 0, 1], desc: "这是我最爱绿洲的朋友评的" },
-{ name: "Coldplay", points: [2, 8, 7, 9, 7, 4], desc: "知名度这一块" },
-{ name: "Weezer", points: [10, 4, 10, 2, 5, 5], desc: "很有潜力的乐队，可惜和radiohead一样只发了一首歌。", colorIndex: 5 },
-{ name: "The Velvet Underground", points: [15, 4, 9, 14, 6, 4], desc: "没几个人买他们的唱片，但每个买了的人，后来都组了自己的摇滚乐团", colorIndex: 2 },
-{ name: "Aerosmith", points: [6, 9, 6, 10, 9, 8], desc: "Dream On,Dream On,Dream On !" },
-{ name: "万能青年旅店", points: [7, 10, 15, 7, 7, 10], desc: "第八首我爱，说实话", colorIndex: 18 },
-{ name: "崔健", points: [9, 7, 11, 9, 7, 9], desc: "小时候我奶奶就弹这个哄我睡觉" },
-{ name: "草东没有派对", points: [4, 7, 8, 6, 5, 6], desc: "吹的踩的很多，个人感觉没那么拉" },
-{ name: "结束乐队", points: [1, 6, 6, 4, 7, 7], desc: "第二季when？" },
-{ name: "King Crimson", points: [15, 8, 13, 6, 7, 15], desc: "islands多了会starless。还有你销量怎么这么路边", colorIndex: 10, duration: 6000 },
-{ name: "国王乐队", points: [0, 0, 0, 0, 0, 1], desc: "回去！", duration: 4000 },
-{ name: "Green Day", points: [6, 9, 8, 10, 9, 6], desc: "典中典之网易云评论：你们喜欢的GD叫权志龙，而我喜欢的GD叫green day" },
-{ name: "Yes", points: [12, 8, 8, 8, 15, 15], desc: "你怎么知道我5块在跳蚤市场收了个Fragile的CD？", colorIndex: 3 },
-{ name: "Metallica", points: [7, 8, 5, 10, 8, 9], desc: "准备给孩子当胎教音乐" },
-{ name: "上海爱丽丝幻乐团", points: [10, 10, 10, 10, 10, 10], desc: "不是摇滚是私货", colorIndex: 8, duration: 4000 },
-{ name: "Fishmans", points: [9, 7, 4, 4, 7, 9], desc: "一次通宵在杭州夜游，听的是LONG SEASON，升仙了要" },
-
-
-{ name: "Led Zeppelin", points: [12, 10, 1, 16, 13, 13], desc: "oh yeah！！mama！！baby！！！" },
-{ name: "Live Aid限定飞艇", points: [20, 10, 1, 16, 0, 0], desc: "名场面" },
-{ name: "Bôa", points: [2, 8, 7, 5, 8, 6], desc: "一首歌复活一个乐队" },
-{ name: "Eric Clapton", points: [8, 8, 7, 10, 8, 10], desc: "“当George让你感到失望🤣”", colorIndex: 7 },
-{ name: "MyGO", points: [1, 5, 6, 4, 3, 5], desc: "我大概一辈子不会忘记这部动画了…" },
-{ name: "ave mujica", points: [1, 4, 4, 2, 8, 7], desc: "神人大乱斗，能看完的家里得请高人了" },
-{ name: "林肯公园", points: [5, 9, 8, 8, 10, 7], desc: "很多人的第一个摇滚乐队" },
-{ name: "Camel", points: [7, 10, 6, 3, 6, 12], desc: "非常悦耳的器乐" },
-{ name: "Jimi Hendrix", points: [15, 8, 5, 14, 3, 15], desc: "英年早逝" },
-{ name: "The Beach Boys", points: [15, 9, 6, 12, 9, 8], desc: "？！强！？" },
-{ name: "猫王", points: [5, 6, 2, 15, 10, 4], desc: "自从我在哪看到猫王的内裤后就再也忘不掉了" },
-{ name: "Chuck Berry", points: [15, 8, 4, 15, 7, 9], desc: "我去，老资历！" },
-{ name: "Eagles", points: [5, 9, 8, 10, 9, 8], desc: "加州旅馆" },
-{ name: "Genesis", points: [9, 8, 7, 8, 7, 10], desc: "销量比我想的高多了" },
-{ name: "放学后茶会（轻音）", points: [1, 5, 7, 4, 20, 8], desc: "一直留着没看，朋友填的分数" },
-{ name: "Imagine Dragons", points: [2, 6, 5, 9, 7, 3], desc: "你就说知不知名吧", duration: 4500 },
-{ name: "Sex Pistols", points: [9, 6, 8, 10, 5, 5], desc: "世界上只有一个好王 ，那就是汉堡王", colorIndex: 5 },
-{ name: "The Who", points: [13, 9, 8, 12, 9, 10], desc: "国内：The Who?" },
-
-
-{ name: "Pink Floyd", points: [15, 10, 15, 15, 8, 13], desc: "小众哥看到pfboys这么火都要急哭了", colorIndex: 17 },
-{ name: "惘闻", points: [5, 8, 0, 4, 0, 9], desc: "怎么还不唱啊？" },
-{ name: "David Bowie", points: [12, 10, 9, 13, 11, 7], desc: "颜值这一块，我先流口水了", colorIndex: 2 },
-{ name: "American Football", points: [9, 7, 6, 8, 6, 8], desc: "靠。。。打开音乐的那一下我绷不住哭了。。。中西部青春期伤痛。。。我终究没有成为我年少时想成为的emo kid。。。", colorIndex: 7 },
-{ name: "Talking Heads", points: [11, 4, 6, 10, 7, 8], desc: "主唱长得真像基里安墨菲", colorIndex: 19 },
-{ name: "Prince", points: [9, 8, 5, 12, 11, 8], desc: "Purple rain！Purple rain！", colorIndex: 13 },
-{ name: "Fleetwood Mac", points: [5, 9, 7, 8, 9, 6], desc: "d指导：两对情侣撕逼撕出四千万销量，建议情侣吵架前先签乐队合同", colorIndex: 2 },
-{ name: "滚石", points: [12, 10, 6, 17, 7, 8], desc: "活化石" },
-{ name: "RADWIMPS", points: [3, 7, 7, 5, 7, 6], desc: "新海诚御用" },
-{ name: "夜鹿 (ヨルシカ)", points: [3, 7, 6, 6, 8, 5], desc: "某吉他社社长：我们社团全是小霓虹金，一问同学你听啥？“啊，j rock~” 都啥乐队啊？“就夜鹿，没了”" },
-{ name: "红辣椒", points: [7, 8, 6, 9, 7, 8], desc: "四个人凑不齐一条短裤", colorIndex: 10 },
-{ name: "Sweet Trip", points: [9, 6, 4, 3, 8, 9], desc: "d指导锐评：盯鞋和IDM生的孩子，小众哥的宝藏终于藏不住了" },
-{ name: "The Smiths", points: [8, 7, 7, 8, 7, 8], desc: "友评：丧", duration: 4000 },
-{ name: "窦唯 (秃头之前)", points: [8, 8, 8, 9, 8, 6], desc: "友评：笛子，窦唯，窦唯！", duration: 3000 },
-{ name: "窦唯 (秃头了)", points: [9, 9, 0, 0, 1, 8], desc: "友评：笛子，窦唯，窦唯！", duration: 3000 },
-{ name: "苏紫旭", points: [8, 6, 8, 2, 6, 10], desc: "自己人，别开腔！（听惯了还行）" },
-{ name: "Deca joins", points: [2, 6, 6, 7, 6, 6], desc: "友评：嘿！ 你也抽烟吗？！" },
-{ name: "GALA", points: [3, 5, 5, 5, 6, 4], desc: "友评：GALAgame里不是这样的啊！" },
-{ name: "陈绮贞", points: [2, 7, 7, 6, 10, 3], desc: "友评：文艺女的最终形态" },
-{ name: "MC赵小六", points: [20, 20, 20, 20, 20, 20], desc: "赵小六不小众了，我不喜欢了", colorIndex: 19 }
-        ];
 
         const bands = namelist.map(b => {
             const preset = (b.colorIndex !== undefined) ? COLOR_PRESETS[b.colorIndex] : getNextColor();
@@ -509,13 +435,15 @@
 
         /**
          * 格式化雷达图显示的数值标题
-         * 雷达图的实际值在11到19时显示为10+但从大小来看是原数值，20正常显示为20，不需要可删除
+         * 雷达图的实际值在11到19时显示为10+但从大小来看是原数值，20正常显示为20
          * @param {number} value - 原始雷达数值
          * @returns {string|number} - 将要在图表上显示的文字
-         * @description 将11至19之间的数值显示为"10+"。如果不需要该功能，可直接注释函数体并 return Math.round(value);
+         * @description 将11至19之间的数值显示为"10+"。是否启用由 CONFIG.ENABLE_SPECIAL_FORMAT 控制
          */
         function formatRadarValue(value) {
             let rounded = Math.round(value);
+            if (!CONFIG.ENABLE_SPECIAL_FORMAT) return rounded;
+
             if (rounded >= 11 && rounded <= 19) {
                 return "10+";
             }
