@@ -2,6 +2,8 @@
 
 类似jojo面板的战力评级展示系统。通过高度自定义的六维雷达图、粒子动画和流畅的视觉过渡效果，生动呈现不同角色的各项能力数值。
 
+![example](https://github.com/user-attachments/assets/1a9f31da-f0da-4b42-9bad-c443429b0344)
+
 ## 核心特性
 
 - 🎨 **高度通用的雷达图**：默认支持六维展示，可通过配置修改任意能力项名称。
@@ -41,9 +43,13 @@ const CONFIG = {
     name: "展示名称",
     scores: [10, 8, 9, 7, 8, 8], // 对应的六个维度分值
     desc: "关于此项的详细描述文字",
-    photo: "pic/your_image.jpg", // 对应的图片文件路径
-    duration: 15000              // 停留显示的时长（毫秒）
+    colorIndex: 0, // 背景粒子的颜色，对应 COLOR_PRESETS 索引 (0-19)
+    duration: 5000              // 停留显示的时长（毫秒），默认为5000
 }
+```
+示例：
+```javascript
+{ name: "The Beatles", points: [15, 15, 10, 20, 10, 10], desc: "无需多言", colorIndex: 12 ,duration: 6000 },
 ```
 
 ### 3. 高级视觉自定义 (CSS 变量)
@@ -52,12 +58,13 @@ const CONFIG = {
 - `--bg-color-1` / `--bg-color-2`: 渐变背景的起始与结束色
 
 ## 文件夹结构
+```
 📁 根目录
 │
 ├── 📁 pic
 │   └──  🖼️ 角色图片
 ├── 📄 index.html
 └── 🎵 music.mp3
-
+```
 - **如何添加图片？** 根目录下创建一个pic目录，然后把图片命名为（角色/乐队/项目）名并放进去就行了。
 - **如何添加音乐？** 自行添加music.mp3。
