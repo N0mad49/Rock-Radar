@@ -1,0 +1,1114 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Radar - 战力雷达图</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap");
+        /* 引入鸿蒙字体 (使用更稳定的全局地址) */
+        @import url("https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/harmonyos-sans/1.1.0/style.css");
+
+        :root {
+            --theme-color: #00ffff;
+            --bg-color-1: #0f1015;
+            --bg-color-2: #1a1a2e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: "HarmonyOS Sans SC", "PingFang SC", "Lantinghei SC", "Microsoft YaHei", "HanHei SC", "Helvetica Neue", "Open Sans", Arial, sans-serif; 
+            overflow: hidden; 
+            background: linear-gradient(135deg, var(--bg-color-1), var(--bg-color-2), #050508, #111);
+            background-size: 400% 400%;
+            animation: gradientBG 30s ease infinite; 
+            color: #fff; 
+            transition: all 2s ease; 
+        }
+
+        #particles-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1005; /* 初始置顶以显示粒子 */
+            pointer-events: none;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container { 
+            position: relative; 
+            z-index: 2; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            padding: 1vh 1vw; 
+        }
+
+        .main-layout {
+            display: flex;
+            width: 98%;
+            max-width: 1700px;
+            height: 94vh;
+            position: relative;
+        }
+
+        .left-panel { 
+            flex: 1.3; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: visible; /* 允许雷达图辉光溢出 */
+        }
+
+        #radarCanvas { 
+            width: 100%; 
+            max-width: 900px;
+            height: auto; 
+            aspect-ratio: 1/1;
+            /* 1.6 倍放大使得内部逻辑长宽增加 60% 后，能包容哪怕是 20 分这样的越界图像，且最终在屏幕上的视觉大小依然和原先严格一致 */
+            transform: scale(1.6); 
+        }
+
+        .right-panel { 
+            flex: 0.7; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            padding: 0 10px;
+        }
+
+        .band-info-box {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+        }
+
+        .band-name { 
+            font-family: "Orbitron", sans-serif;
+            font-size: 3rem; 
+            font-weight: 900; 
+            color: var(--theme-color); 
+            text-shadow: 0 0 15px var(--theme-color);
+            transition: all 2s ease; /* 名字颜色和发光慢速切换 */
+            animation: nameEntrance 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        @keyframes nameEntrance {
+            0% { opacity: 0; transform: scale(0.5) translateZ(-200px); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1) translateZ(0); filter: blur(0); }
+        }
+
+        .band-photo-container {
+            width: 100%;
+            height: 380px; 
+            background: transparent;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            transition: all 2s ease;
+            perspective: 1200px;
+        }
+
+        .band-photo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transform: scale(0.3) translateZ(-500px);
+            transition: opacity 1.2s ease, transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .band-desc-container {
+            align-self: flex-start;
+            display: inline-block;
+            padding: 25px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 12px;
+            transition: all 2s ease; /* 边框色变色慢速切换 */
+            max-width: 95%; 
+            opacity: 0; /* 默认隐藏，由动画控制显示 */
+            animation: descEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+        }
+
+        @keyframes descEntrance {
+            0% { opacity: 0; transform: scale(0.8) translateZ(-100px); }
+            100% { opacity: 1; transform: scale(1) translateZ(0); }
+        }
+
+        .band-desc { 
+            font-size: 1.8rem; 
+            line-height: 1.3; 
+            color: rgba(255, 255, 255, 0.9); 
+            transition: all 2s ease;
+        }
+
+        .progress-bar-container {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--theme-color);
+            box-shadow: 0 0 20px var(--theme-color);
+            transition: background 2s ease, box-shadow 2s ease;
+            width: 0%;
+        }
+
+        /* 底部全局进度条 */
+        .global-timeline-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        .global-timeline-bar {
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--theme-color));
+            width: 0%;
+            transition: width 0.1s linear, background 2s ease;
+            position: relative;
+        }
+
+        .global-timeline-bar::after {
+            content: "";
+            position: absolute;
+            right: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 4px; height: 100%;
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .timeline-tooltip {
+            position: absolute;
+            bottom: 25px;
+            color: #fff;
+            padding: 5px 10px;
+            font-family: "Orbitron", "HarmonyOS Sans SC", sans-serif;
+            font-size: 0.9rem;
+            pointer-events: none;
+            display: none;
+            z-index: 101;
+            text-align: center;
+            text-shadow: 0 0 10px var(--theme-color), 0 0 5px #000;
+            white-space: pre; /* 支持换行显示显示乐队名 */
+        }
+
+        /* 准备页面 */
+        #introOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 1002; /* 必须比粒子 canvas 还要高，才能挡住雷达 */
+            transition: opacity 1s ease;
+            pointer-events: none;
+            opacity: 1; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #introOverlay::after {
+            content: "按空格开始";
+            color: rgba(255, 255, 255, 0.4);
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.2; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.2; }
+        }
+
+        #introOverlay.started::after {
+            display: none;
+        }
+
+        .session-timer {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            font-family: "Orbitron", sans-serif;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        /* 全屏模式下的 UI 隐藏 */
+        :fullscreen body { cursor: none; }
+        :fullscreen .global-timeline-container,
+        :fullscreen #globalTimeline,
+        :fullscreen .progress-bar-container,
+        :fullscreen .session-timer { 
+            display: none !important; 
+        }
+
+        .fade-out { 
+            opacity: 0; 
+            transform: scale(0.8) translateZ(-100px); 
+            transition: all 0.5s ease-in;
+        }
+
+        /* MVP 乐队底图容器 */
+        .mvp-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* 在背景渐变之上，在容器 container 之下 */
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .mvp-bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 改为 contain，防止裁切 */
+            object-position: left center; /* 靠左对齐 */
+            -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%);
+            mask-image: linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0) 100%);
+            transition: transform 2.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 2.5s ease;
+            transform: translateX(-100%); /* 初始在左侧外部 */
+            opacity: 0;
+        }
+
+        .mvp-bg-image.active {
+            opacity: 1;
+            transform: translateX(0); /* 滑动到原位即左侧对齐 */
+        }
+
+        .mvp-bg-image.exit {
+            transform: translateX(0); /* 退出时不移动位置 */
+            opacity: 0; /* 仅逐渐消失 */
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" src="music.mp3"></audio>
+    <div id="introOverlay"></div>
+
+    <div id="mvpBgContainer" class="mvp-bg-container"></div>
+
+    <canvas id="particles-canvas"></canvas>
+    <div class="session-timer" id="sessionTimer">00:00:00</div>
+
+    <div class="container">
+        <div class="main-layout">
+            <div class="left-panel">
+                <canvas id="radarCanvas" width="1600" height="1600"></canvas>
+            </div>
+            <div class="right-panel">
+                <div class="band-info-box">
+                    <div class="band-name" id="bandName"></div>
+                    
+                    <div class="band-photo-container" id="photoContainer">
+                        <img id="bandPhoto" class="band-photo" src="" alt="">
+                    </div>
+
+                    <div class="band-desc-container">
+                        <div class="band-desc" id="bandDesc"></div>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="global-timeline-container" id="globalTimeline">
+        <div class="global-timeline-bar" id="globalBar"></div>
+        <div class="timeline-tooltip" id="timelineTooltip">00:00</div>
+    </div>
+
+    <script>
+        const COLOR_PRESETS = [
+            { color: "#00ffff", bg1: "#001a1a", bg2: "#000d0d" }, // 青色系
+            { color: "#ff00ff", bg1: "#1a001a", bg2: "#0d000d" }, // 洋红色系
+            { color: "#ffff00", bg1: "#1a1a00", bg2: "#0d0d00" }, // 黄色系
+            { color: "#00ff00", bg1: "#001a00", bg2: "#000d00" }, // 绿色系
+            { color: "#ff4500", bg1: "#1a0700", bg2: "#0d0300" }, // 橙红色系
+            { color: "#1e90ff", bg1: "#000f1a", bg2: "#00070d" }, // 道奇蓝
+            { color: "#ff0040", bg1: "#1a0006", bg2: "#0d0003" }, // 玫红色系
+            { color: "#7cfc00", bg1: "#0c1a00", bg2: "#060d00" }, // 草绿色系
+            { color: "#ba55d3", bg1: "#13091a", bg2: "#09040d" }, // 中兰花紫
+            { color: "#40e0d0", bg1: "#061a18", bg2: "#030d0c" }, // 绿松石系
+            { color: "#f08080", bg1: "#1a0e0e", bg2: "#0d0707" }, // 浅珊瑚红
+            { color: "#00fa9a", bg1: "#001a10", bg2: "#000d08" }, // 中春绿色
+            { color: "#ff8c00", bg1: "#1a0e00", bg2: "#0d0700" }, // 深橙色系
+            { color: "#9370db", bg1: "#0f0b1a", bg2: "#07050d" }, // 中紫色系
+            { color: "#00ced1", bg1: "#00151a", bg2: "#000a0d" }, // 深青色系
+            { color: "#ff1493", bg1: "#1a0210", bg2: "#0d0108" }, // 深粉色系
+            { color: "#adff2f", bg1: "#111a03", bg2: "#080d01" }, // 黄绿色系
+            { color: "#b0c4de", bg1: "#12141a", bg2: "#090a0d" }, // 亮钢兰
+            { color: "#eea2ad", bg1: "#1a1112", bg2: "#0d0809" }, // 浅粉红
+            { color: "#00bfff", bg1: "#00131a", bg2: "#00090d" }  // 深天空蓝
+        ];
+
+        let colorPool = [...COLOR_PRESETS].sort(() => Math.random() - 0.5);
+        let colorIndex = 0;
+
+        // 全局配置参数
+        const CONFIG = {
+            INTRO_WAIT_TIME: 5000, // 开头准备页等待时间 (ms)
+            // 雷达图各个维度的名称
+            DIM_NAMES: ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"],
+            // 六个维度的满分基准线，每个维度可单独控制
+            BASE_MAX_SCORES: [10, 10, 10, 10, 10, 10], 
+            // 六个维度的允许最低分数，每个维度可单独控制
+            MIN_SCORES: [0, 0, 0, 0, 0, 0], 
+            ANIM_DURATION: 1500, // 雷达各项数值生长动画的过渡时间 (ms)
+        };
+
+        function getNextColor() {
+            const c = colorPool[colorIndex];
+            colorIndex = (colorIndex + 1) % colorPool.length;
+            if (colorIndex === 0) colorPool.sort(() => Math.random() - 0.5);
+            return c;
+        }
+
+        const mvplist = ["The Beatles", "Pink Floyd", "Led Zeppelin", "Queen","Live Aid限定飞艇","King Crimson","MC赵小六","滚石","Yes",
+            "David Bowie","Bob Dylan","万能青年旅店"
+         ];
+
+        // ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"]
+        // 可选属性: 
+        // colorIndex: 对应 COLOR_PRESETS 索引 (0-19)
+        // duration: 该乐队持续显示时间 (ms)，默认 5000ms
+        const namelist = [
+
+{ name: "The Beatles", points: [15, 15, 10, 20, 10, 10], desc: "无需多言", colorIndex: 12 },
+{ name: "Nirvana", points: [9, 8, 9, 12, 9, 7], desc: "xqcl" },
+{ name: "Guns N' Roses", points: [4, 9, 8, 10, 10, 8], desc: "所有的战争都是内战，因为所有的人类都是同胞。" },
+{ name: "Radiohead", points: [13, 8, 9, 10, 8, 12], desc: "rym亲爹。我一直是idm粉丝啊" },
+{ name: "Bob Dylan", points: [14, 4, 15, 14, 1, 2], desc: "诺贝尔文学奖得主的含金量，要歌词有歌词，唱功有歌词" },
+{ name: "U2", points: [3, 3, 3, 9, 3, 3], desc: "我朋友这么评的（笑）" },
+{ name: "Black Sabbath", points: [13, 6, 5, 14, 9, 9], desc: "彼得帕克被蜘蛛咬了，他是蜘蛛侠。蝙蝠被ozzy咬了，那他岂不是ozzy侠" },
+{ name: "罗大佑", points: [7, 9, 15, 9, 7, 7], desc: "😡黑手！😡黑手！😡黑手！ ✋羅大佑最新專輯！😎 滾石唱片！💿現在發行！😃🎶 😎🎸 想欲予阮出外的人🏍️飛向一個繁華世界🦆🌏 一站一站過過停停🚄男兒的天外天☁️😁" },
+{ name: "ACDC", points: [1, 7, 2, 12, 8, 7], desc: "Gemini：创新可以给到 1 分。毕竟全世界都知道 ACDC 只有一张专辑，只是换了 17 个封面。" },
+{ name: "The Clash", points: [8, 7, 9, 8, 7, 6], desc: "封面像那个学科特柯本砸琴的小孩哥" },
+{ name: "有刺无刺 (GBC)", points: [1, 6, 7, 4, 7, 6], desc: "再见了刺小妹👋" },
+{ name: "Joy Division", points: [10, 6, 6, 9, 5, 5], desc: "封面王朝了" },
+{ name: "Rush", points: [9, 4, 5, 8, 8, 11], desc: "时间会证明rush" },
+{ name: "Deep Purple", points: [11, 7, 6, 9, 9, 10], desc: "Smoke on the Water神秘riff", colorIndex: 13 },
+{ name: "Beyond", points: [6, 9, 8, 9, 9, 6], desc: "童年回忆" },
+
+
+{ name: "Queen", points: [10, 10, 9, 15, 15, 10], desc: "我相信没有人没听过他们的歌" },
+{ name: "The Kinks", points: [10, 8, 8, 10, 7, 6], desc: "d指导锐评：兄弟内斗比Oasis早了几十年" },
+{ name: "Oasis", points: [5, 8, 3, 9, 0, 1], desc: "这是我最爱绿洲的朋友评的" },
+{ name: "Coldplay", points: [2, 8, 7, 9, 7, 4], desc: "知名度这一块" },
+{ name: "Weezer", points: [10, 4, 10, 2, 5, 5], desc: "很有潜力的乐队，可惜和radiohead一样只发了一首歌。", colorIndex: 5 },
+{ name: "The Velvet Underground", points: [15, 4, 9, 14, 6, 4], desc: "没几个人买他们的唱片，但每个买了的人，后来都组了自己的摇滚乐团", colorIndex: 2 },
+{ name: "Aerosmith", points: [6, 9, 6, 10, 9, 8], desc: "Dream On,Dream On,Dream On !" },
+{ name: "万能青年旅店", points: [7, 10, 15, 7, 7, 10], desc: "第八首我爱，说实话", colorIndex: 18 },
+{ name: "崔健", points: [9, 7, 11, 9, 7, 9], desc: "小时候我奶奶就弹这个哄我睡觉" },
+{ name: "草东没有派对", points: [4, 7, 8, 6, 5, 6], desc: "吹的踩的很多，个人感觉没那么拉" },
+{ name: "结束乐队", points: [1, 6, 6, 4, 7, 7], desc: "第二季when？" },
+{ name: "King Crimson", points: [15, 8, 13, 6, 7, 15], desc: "islands多了会starless。还有你销量怎么这么路边", colorIndex: 10, duration: 6000 },
+{ name: "国王乐队", points: [0, 0, 0, 0, 0, 1], desc: "回去！", duration: 4000 },
+{ name: "Green Day", points: [6, 9, 8, 10, 9, 6], desc: "典中典之网易云评论：你们喜欢的GD叫权志龙，而我喜欢的GD叫green day" },
+{ name: "Yes", points: [12, 8, 8, 8, 15, 15], desc: "你怎么知道我5块在跳蚤市场收了个Fragile的CD？", colorIndex: 3 },
+{ name: "Metallica", points: [7, 8, 5, 10, 8, 9], desc: "准备给孩子当胎教音乐" },
+{ name: "上海爱丽丝幻乐团", points: [10, 10, 10, 10, 10, 10], desc: "不是摇滚是私货", colorIndex: 8, duration: 4000 },
+{ name: "Fishmans", points: [9, 7, 4, 4, 7, 9], desc: "一次通宵在杭州夜游，听的是LONG SEASON，升仙了要" },
+
+
+{ name: "Led Zeppelin", points: [12, 10, 1, 16, 13, 13], desc: "oh yeah！！mama！！baby！！！" },
+{ name: "Live Aid限定飞艇", points: [20, 10, 1, 16, 0, 0], desc: "名场面" },
+{ name: "Bôa", points: [2, 8, 7, 5, 8, 6], desc: "一首歌复活一个乐队" },
+{ name: "Eric Clapton", points: [8, 8, 7, 10, 8, 10], desc: "“当George让你感到失望🤣”", colorIndex: 7 },
+{ name: "MyGO", points: [1, 5, 6, 4, 3, 5], desc: "我大概一辈子不会忘记这部动画了…" },
+{ name: "ave mujica", points: [1, 4, 4, 2, 8, 7], desc: "神人大乱斗，能看完的家里得请高人了" },
+{ name: "林肯公园", points: [5, 9, 8, 8, 10, 7], desc: "很多人的第一个摇滚乐队" },
+{ name: "Camel", points: [7, 10, 6, 3, 6, 12], desc: "非常悦耳的器乐" },
+{ name: "Jimi Hendrix", points: [15, 8, 5, 14, 3, 15], desc: "英年早逝" },
+{ name: "The Beach Boys", points: [15, 9, 6, 12, 9, 8], desc: "？！强！？" },
+{ name: "猫王", points: [5, 6, 2, 15, 10, 4], desc: "自从我在哪看到猫王的内裤后就再也忘不掉了" },
+{ name: "Chuck Berry", points: [15, 8, 4, 15, 7, 9], desc: "我去，老资历！" },
+{ name: "Eagles", points: [5, 9, 8, 10, 9, 8], desc: "加州旅馆" },
+{ name: "Genesis", points: [9, 8, 7, 8, 7, 10], desc: "销量比我想的高多了" },
+{ name: "放学后茶会（轻音）", points: [1, 5, 7, 4, 20, 8], desc: "一直留着没看，朋友填的分数" },
+{ name: "Imagine Dragons", points: [2, 6, 5, 9, 7, 3], desc: "你就说知不知名吧", duration: 4500 },
+{ name: "Sex Pistols", points: [9, 6, 8, 10, 5, 5], desc: "世界上只有一个好王 ，那就是汉堡王", colorIndex: 5 },
+{ name: "The Who", points: [13, 9, 8, 12, 9, 10], desc: "国内：The Who?" },
+
+
+{ name: "Pink Floyd", points: [15, 10, 15, 15, 8, 13], desc: "小众哥看到pfboys这么火都要急哭了", colorIndex: 17 },
+{ name: "惘闻", points: [5, 8, 0, 4, 0, 9], desc: "怎么还不唱啊？" },
+{ name: "David Bowie", points: [12, 10, 9, 13, 11, 7], desc: "颜值这一块，我先流口水了", colorIndex: 2 },
+{ name: "American Football", points: [9, 7, 6, 8, 6, 8], desc: "靠。。。打开音乐的那一下我绷不住哭了。。。中西部青春期伤痛。。。我终究没有成为我年少时想成为的emo kid。。。", colorIndex: 7 },
+{ name: "Talking Heads", points: [11, 4, 6, 10, 7, 8], desc: "主唱长得真像基里安墨菲", colorIndex: 19 },
+{ name: "Prince", points: [9, 8, 5, 12, 11, 8], desc: "Purple rain！Purple rain！", colorIndex: 13 },
+{ name: "Fleetwood Mac", points: [5, 9, 7, 8, 9, 6], desc: "d指导：两对情侣撕逼撕出四千万销量，建议情侣吵架前先签乐队合同", colorIndex: 2 },
+{ name: "滚石", points: [12, 10, 6, 17, 7, 8], desc: "活化石" },
+{ name: "RADWIMPS", points: [3, 7, 7, 5, 7, 6], desc: "新海诚御用" },
+{ name: "夜鹿 (ヨルシカ)", points: [3, 7, 6, 6, 8, 5], desc: "某吉他社社长：我们社团全是小霓虹金，一问同学你听啥？“啊，j rock~” 都啥乐队啊？“就夜鹿，没了”" },
+{ name: "红辣椒", points: [7, 8, 6, 9, 7, 8], desc: "四个人凑不齐一条短裤", colorIndex: 10 },
+{ name: "Sweet Trip", points: [9, 6, 4, 3, 8, 9], desc: "d指导锐评：盯鞋和IDM生的孩子，小众哥的宝藏终于藏不住了" },
+{ name: "The Smiths", points: [8, 7, 7, 8, 7, 8], desc: "友评：丧", duration: 4000 },
+{ name: "窦唯 (秃头之前)", points: [8, 8, 8, 9, 8, 6], desc: "友评：笛子，窦唯，窦唯！", duration: 3000 },
+{ name: "窦唯 (秃头了)", points: [9, 9, 0, 0, 1, 8], desc: "友评：笛子，窦唯，窦唯！", duration: 3000 },
+{ name: "苏紫旭", points: [8, 6, 8, 2, 6, 10], desc: "自己人，别开腔！（听惯了还行）" },
+{ name: "Deca joins", points: [2, 6, 6, 7, 6, 6], desc: "友评：嘿！ 你也抽烟吗？！" },
+{ name: "GALA", points: [3, 5, 5, 5, 6, 4], desc: "友评：GALAgame里不是这样的啊！" },
+{ name: "陈绮贞", points: [2, 7, 7, 6, 10, 3], desc: "友评：文艺女的最终形态" },
+{ name: "MC赵小六", points: [20, 20, 20, 20, 20, 20], desc: "赵小六不小众了，我不喜欢了", colorIndex: 19 }
+        ];
+
+        const bands = namelist.map(b => {
+            const preset = (b.colorIndex !== undefined) ? COLOR_PRESETS[b.colorIndex] : getNextColor();
+            return {
+                ...b, 
+                isGoat: mvplist.includes(b.name),
+                duration: b.duration || 5000,
+                ...preset
+            };
+        });
+
+        // 时间轴计算
+        let totalDuration = bands.reduce((acc, b) => acc + b.duration, 0);
+        let timeSegments = [];
+        let accumulatedTime = 0;
+        bands.forEach((b, i) => {
+            timeSegments.push({ start: accumulatedTime, end: accumulatedTime + b.duration, bandIndex: i });
+            accumulatedTime += b.duration;
+        });
+
+        const ANIM_DURATION = CONFIG.ANIM_DURATION;
+
+        /**
+         * 格式化雷达图显示的数值标题
+         * 雷达图的实际值在11到19时显示为10+但从大小来看是原数值，20正常显示为20，不需要可删除
+         * @param {number} value - 原始雷达数值
+         * @returns {string|number} - 将要在图表上显示的文字
+         * @description 将11至19之间的数值显示为"10+"。如果不需要该功能，可直接注释函数体并 return Math.round(value);
+         */
+        function formatRadarValue(value) {
+            let rounded = Math.round(value);
+            if (rounded >= 11 && rounded <= 19) {
+                return "10+";
+            }
+            return rounded; // 大于等于20，或是10以下等，正常显示
+        }
+
+        let currentIndex = -1;
+        let isGlobalTimelineDragging = false;
+        let globalCurrentTime = 0; // ms
+        let isPaused = true; 
+        let isStarted = false; // 是否已经按过空格开始
+        let lastTimestamp = 0;
+
+        let currentThemeColor = "#00ffff";
+        let targetThemeColor = "#00ffff"; 
+        let currentScores = [0, 0, 0, 0, 0, 0];
+        let startScores = [0, 0, 0, 0, 0, 0];
+        let targetScores = [0, 0, 0, 0, 0, 0];
+        let animProgress = 1;
+        let animStartTime = 0;
+        let startTime = Date.now();
+
+        const radarCanvas = document.getElementById("radarCanvas");
+        const ctx = radarCanvas.getContext("2d");
+        const pCanvas = document.getElementById("particles-canvas");
+        const pCtx = pCanvas.getContext("2d");
+        const globalBar = document.getElementById("globalBar");
+        const globalTimeline = document.getElementById("globalTimeline");
+        const timelineTooltip = document.getElementById("timelineTooltip");
+        let particles = [];
+        
+        function resizeCanvas() {
+            pCanvas.width = window.innerWidth;
+            pCanvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(type = "normal") { 
+                this.type = type; 
+                this.reset(true); 
+            }
+            reset(init = false) {
+                this.x = Math.random() * pCanvas.width;
+                this.isTop = Math.random() > 0.5;
+                this.y = this.isTop ? -100 : pCanvas.height + 100;
+                if (init) this.y = Math.random() * pCanvas.height;
+                
+                if (this.type === "normal") {
+                    this.vy = (this.isTop ? 1 : -1) * (Math.random() * 1.5 + 0.5);
+                    this.vx = (Math.random() - 0.5) * 1;
+                    this.size = Math.random() * 2 + 1;
+                    this.bloomMult = 10; 
+                    this.alphaMult = 0.9;
+                } else {
+                    this.vy = (this.isTop ? 1 : -1) * (Math.random() * 0.4 + 0.2); 
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.size = Math.random() * 5 + 5; 
+                    this.bloomMult = 15; 
+                    this.alphaMult = 0.25; 
+                }
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                let dist = Math.abs(this.y - pCanvas.height/2) / (pCanvas.height/2);
+                this.life = dist;
+                if (this.life <= 0.05 || this.y < -150 || this.y > pCanvas.height + 150) this.reset();
+            }
+            draw() {
+                pCtx.save();
+                pCtx.globalAlpha = Math.max(0, this.life * this.alphaMult);
+                let gradSize = this.size * this.bloomMult;
+                let gradient = pCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, gradSize);
+                gradient.addColorStop(0, hexToRgbA(currentThemeColor, 0.7));
+                gradient.addColorStop(0.3, hexToRgbA(currentThemeColor, 0.2));
+                gradient.addColorStop(1, "transparent");
+                pCtx.fillStyle = gradient;
+                pCtx.beginPath();
+                pCtx.arc(this.x, this.y, gradSize, 0, Math.PI * 2);
+                pCtx.fill();
+                if (this.type === "normal") {
+                    pCtx.fillStyle = "#fff";
+                    pCtx.beginPath();
+                    pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    pCtx.fill();
+                }
+                pCtx.restore();
+            }
+        }
+        for(let i = 0; i < 50; i++) particles.push(new Particle("normal"));
+        for(let i = 0; i < 25; i++) particles.push(new Particle("nebula"));
+
+        function hexToRgbA(hex, alpha) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})` : `rgba(255,255,255,${alpha})`;
+        }
+
+        function lerpColor(c1, c2, t) {
+            const r1 = parseInt(c1.substring(1, 3), 16);
+            const g1 = parseInt(c1.substring(3, 5), 16);
+            const b1 = parseInt(c1.substring(5, 7), 16);
+            const r2 = parseInt(c2.substring(1, 3), 16);
+            const g2 = parseInt(c2.substring(3, 5), 16);
+            const b2 = parseInt(c2.substring(5, 7), 16);
+            const r = Math.round(r1 + (r2 - r1) * t);
+            const g = Math.round(g1 + (g2 - g1) * t);
+            const b = Math.round(b1 + (b2 - b1) * t);
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        function updateTimer() {
+            let diff = Math.floor(globalCurrentTime / 1000);
+            let h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            let m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            let s = (diff % 60).toString().padStart(2, '0');
+            document.getElementById("sessionTimer").textContent = `${h}:${m}:${s}`;
+        }
+
+        function setProgressBar(duration) {
+            const bar = document.getElementById("progressBar");
+            bar.style.transition = 'none';
+            bar.style.width = '0%';
+            void bar.offsetWidth;
+            bar.style.transition = `width ${duration}ms linear, background 2s ease, box-shadow 2s ease`;
+            bar.style.width = '100%';
+        }
+
+        /**
+         * 调度并执行UI的淡出过渡，然后调用核心切换逻辑
+         * @param {Object} band - 即将展示的乐队数据对象
+         * @param {boolean} isFirst - 是否是初始首次加载
+         */
+        function updateUI(band, isFirst = false) {
+            const nameEl = document.getElementById("bandName");
+            const depsEl = document.getElementById("bandDesc");
+            const containerEl = depsEl.parentElement;
+            const photoEl = document.getElementById("bandPhoto");
+
+            if (!isFirst) {
+                nameEl.style.animation = 'none';
+                containerEl.style.animation = 'none';
+                nameEl.classList.add("fade-out");
+                containerEl.classList.add("fade-out");
+                photoEl.style.transform = "scale(0.3) translateZ(-500px)";
+                photoEl.style.opacity = "0";
+
+                setTimeout(() => {
+                    performTransition(band, isFirst);
+                }, 500);
+            } else {
+                performTransition(band, isFirst);
+            }
+        }
+
+        /**
+         * 核心的视图与数据切换：更换文字、图片加载、应用主题色及计算雷达图目标分数
+         * @param {Object} band - 即将展示的乐队数据对象
+         * @param {boolean} isFirst - 是否是初始首次加载
+         */
+        function performTransition(band, isFirst) {
+            const nameEl = document.getElementById("bandName");
+            const depsEl = document.getElementById("bandDesc");
+            const containerEl = depsEl.parentElement;
+            const photoEl = document.getElementById("bandPhoto");
+            const mvpContainer = document.getElementById("mvpBgContainer");
+
+            targetThemeColor = band.color;
+            document.documentElement.style.setProperty('--theme-color', band.color);
+            document.documentElement.style.setProperty('--bg-color-1', band.bg1);
+            document.documentElement.style.setProperty('--bg-color-2', band.bg2);
+
+            nameEl.classList.remove("fade-out");
+            containerEl.classList.remove("fade-out");
+
+            // MVP 底图逻辑
+            const isMvp = mvplist.includes(band.name);
+            const oldMvpImg = mvpContainer.querySelector(".mvp-bg-image.active");
+            
+            if (oldMvpImg) {
+                oldMvpImg.classList.remove("active");
+                oldMvpImg.classList.add("exit");
+                setTimeout(() => oldMvpImg.remove(), 2000);
+            }
+
+            if (isMvp) {
+                const img = document.createElement("img");
+                img.className = "mvp-bg-image";
+                img.src = ""; 
+                // 优先加载 webp 格式
+                const extensions = ['webp', 'jpg', 'png', 'jpeg'];
+                const tryLoadMvp = (idx) => {
+                    if (idx >= extensions.length) return;
+                    const testImg = new Image();
+                    testImg.onload = () => {
+                        img.src = testImg.src;
+                        // 略微延迟以确保 DOM 渲染后触发 CSS 动画
+                        requestAnimationFrame(() => {
+                            img.classList.add("active");
+                        });
+                    };
+                    testImg.onerror = () => tryLoadMvp(idx + 1);
+                    testImg.src = `./pic/${band.name}1.${extensions[idx]}`;
+                };
+                tryLoadMvp(0);
+                mvpContainer.appendChild(img);
+            }
+
+            if (!isFirst) {
+                void nameEl.offsetWidth;
+                void containerEl.offsetWidth;
+            }
+
+            // 特殊动画逻辑：如果该乐队在 mvplist 中，数值动画从 0 开始缓慢放大
+            // 如果不在 mvplist 中（普通乐队），则从上一个乐队的分数平滑过渡
+            if (isFirst || isMvp) {
+                startScores = [0, 0, 0, 0, 0, 0];
+            } else {
+                startScores = [...currentScores];
+            }
+            
+            targetScores = band.points.map((v, i) => Math.max(CONFIG.MIN_SCORES[i], v));
+            animProgress = 0;
+            animStartTime = performance.now();
+
+            nameEl.textContent = band.name;
+            depsEl.innerHTML = band.desc;
+            
+            nameEl.style.animation = "nameEntrance 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards";
+            containerEl.style.animation = "descEntrance 1s ease-out 0.3s both";
+
+            // 优先加载 webp 格式
+            const extensions = ['webp', 'jpg', 'png', 'jpeg'];
+            const tryLoad = (idx) => {
+                if (idx >= extensions.length) {
+                    photoEl.style.opacity = "0";
+                    return;
+                }
+                const imgPath = `./pic/${band.name}.${extensions[idx]}`;
+                const tempImg = new Image();
+                tempImg.onload = () => {
+                    photoEl.src = imgPath;
+                    photoEl.style.opacity = "1";
+                    photoEl.style.transform = "rotateY(0) translateZ(0)";
+                };
+                tempImg.onerror = () => tryLoad(idx + 1);
+                tempImg.src = imgPath;
+            };
+            tryLoad(0);
+
+            // 获取当前乐队相对于当前总进度的剩余时间
+            const segment = timeSegments.find(s => s.bandIndex === bands.indexOf(band));
+            const remainingInSegment = segment.end - globalCurrentTime;
+            setProgressBar(remainingInSegment > 0 ? remainingInSegment : band.duration);
+        }
+
+        /**
+         * 负责在 Canvas 上绘制六维雷达图、背景网格、连接线及其光晕特效
+         */
+        function drawRadar() {
+            const w = radarCanvas.width;   
+            const h = radarCanvas.height;  
+            const centerX = w / 2;
+            const centerY = h / 2;
+            
+            const maxR = 1000 * 0.4; 
+
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.lineWidth = 1;
+
+            // 背景网格 (固定10级基础刻度)，每层都按每个维度的满分计算半径比例
+            const gridLayers = 10;
+            for (let layer = 1; layer <= gridLayers; layer++) {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    // grid表示满分的比例，比如第10层即 10/10 = 1倍的maxR
+                    const r = (layer / gridLayers) * maxR;
+                    const angle = (i * 60 - 90) * Math.PI / 180;
+                    const x = centerX + r * Math.cos(angle);
+                    const y = centerY + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = `rgba(255,255,255,${layer % 5 === 0 ? 0.2 : 0.08})`;
+                ctx.stroke();
+            }
+
+            // 轴向量
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * 60 - 90) * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + maxR * Math.cos(angle), centerY + maxR * Math.sin(angle));
+                ctx.strokeStyle = `rgba(255,255,255,0.15)`;
+                ctx.stroke();
+            }
+
+            // 雷达多边形 (允许超出 maxR，每个维度的基准线单独映射配置)
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const dimMaxScore = CONFIG.BASE_MAX_SCORES[i];
+                const r = (currentScores[i] / dimMaxScore) * maxR;
+                const angle = (i * 60 - 90) * Math.PI / 180;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            // 基础填充 (稍微增强一点存在感)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = hexToRgbA(currentThemeColor, 0.25);
+            ctx.fill();
+
+            // 激光边缘效果 - 更加激进的多重高亮叠加
+            ctx.save();
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            
+            // 1. 超宽范围的环境光晕 (辉光)
+            ctx.shadowBlur = 100; // 大幅增加辉光范围
+            ctx.shadowColor = currentThemeColor;
+            ctx.strokeStyle = currentThemeColor;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // 2. 中层高饱和度激光束
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = currentThemeColor;
+            ctx.strokeStyle = currentThemeColor;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // 3. 核心亮白色高能射线
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#fff";
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // 4. 二次强化最亮核心 (防止偏色，增加白光质感)
+            ctx.shadowBlur = 5;
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+            
+            ctx.restore();
+
+            // 1600宽时留更多留白给极端数值以免被截断
+            ctx.font = 'bold 28px "Orbitron", sans-serif'; 
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * 60 - 90) * Math.PI / 180;
+                let x = centerX + (maxR + 80) * Math.cos(angle);
+                let y = centerY + (maxR + 80) * Math.sin(angle);
+                ctx.textAlign = Math.abs(Math.cos(angle)) < 0.1 ? 'center' : (Math.cos(angle) > 0 ? 'left' : 'right');
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${CONFIG.DIM_NAMES[i]} ${formatRadarValue(currentScores[i])}`, x, y);
+            }
+            ctx.restore();
+        }
+
+        /**
+         * 引擎的核心帧循环（游戏循环）
+         * 负责：1. 处理全局的时间线与播放状态; 2. 颜色插值平滑渐变; 3. 处理得分切换的缓动动画; 4. 触发Canvas绘图更新
+         * @param {number} timestamp - 配合requestAnimationFrame注入的当前帧高精时间戳
+         */
+        function tick(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            // 1. 全局进度逻辑
+            if (!isPaused && globalCurrentTime < totalDuration) {
+                globalCurrentTime += deltaTime;
+                if (globalCurrentTime >= totalDuration) {
+                    globalCurrentTime = totalDuration;
+                    isPaused = true; // 播放结束
+                }
+
+                // 更新全局进度条展示
+                const progressPer = (globalCurrentTime / totalDuration) * 100;
+                globalBar.style.width = progressPer + "%";
+
+                // 检查是否需要切换乐队
+                const currentSegment = timeSegments.find(s => globalCurrentTime >= s.start && globalCurrentTime < s.end);
+                if (currentSegment && currentSegment.bandIndex !== currentIndex) {
+                    currentIndex = currentSegment.bandIndex;
+                    updateUI(bands[currentIndex], currentIndex === 0 && globalCurrentTime < 1000); 
+                }
+            }
+
+            // 2. 颜色平滑过渡
+            if (currentThemeColor !== targetThemeColor) {
+                currentThemeColor = lerpColor(currentThemeColor, targetThemeColor, 0.02);
+            }
+
+            // 3. 雷达数值动画
+            if (animProgress < 1) {
+                const elapsed = performance.now() - animStartTime;
+                let t = Math.min(elapsed / ANIM_DURATION, 1);
+                t = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                for (let i = 0; i < 6; i++) currentScores[i] = (1 - t) * startScores[i] + t * targetScores[i];
+                if (t >= 1) animProgress = 1;
+            }
+
+            // 4. 渲染
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            drawRadar();
+            updateTimer();
+            requestAnimationFrame(tick);
+        }
+
+        // 全局进度条拖动逻辑
+        globalTimeline.addEventListener('mouseenter', () => {
+             timelineTooltip.style.display = 'block';
+        });
+
+        globalTimeline.addEventListener('mousedown', (e) => {
+            isGlobalTimelineDragging = true;
+            timelineTooltip.style.display = 'block';
+            updateGlobalTimeFromClick(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            // 获取相对于 timeline 的坐标
+            const rect = globalTimeline.getBoundingClientRect();
+            const isInTimeline = (e.clientY >= rect.top && e.clientY <= rect.bottom);
+            
+            if (isInTimeline || isGlobalTimelineDragging) {
+                const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+                const per = x / rect.width;
+                const previewTime = per * totalDuration;
+                
+                // 找到预览时间对应的乐队
+                const previewSegment = timeSegments.find(s => previewTime >= s.start && previewTime <= s.end);
+                const previewBandName = previewSegment ? bands[previewSegment.bandIndex].name : "";
+
+                const diff = Math.floor(previewTime / 1000);
+                const m = Math.floor(diff / 60).toString().padStart(2, '0');
+                const s = (diff % 60).toString().padStart(2, '0');
+                
+                timelineTooltip.style.left = `${e.clientX - 25}px`;
+                timelineTooltip.innerHTML = `<div style="font-size:0.7rem; opacity:0.8; font-family:'HarmonyOS Sans SC'">${previewBandName}</div>${m}:${s}`;
+                timelineTooltip.style.display = 'block';
+            } else if (!isGlobalTimelineDragging) {
+                timelineTooltip.style.display = 'none';
+            }
+
+            if (isGlobalTimelineDragging) updateGlobalTimeFromClick(e);
+        });
+
+        globalTimeline.addEventListener('mouseleave', () => {
+            if (!isGlobalTimelineDragging) timelineTooltip.style.display = 'none';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isGlobalTimelineDragging = false;
+            timelineTooltip.style.display = 'none';
+        });
+
+        function updateGlobalTimeFromClick(e) {
+            const rect = globalTimeline.getBoundingClientRect();
+            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+            const per = x / rect.width;
+            globalCurrentTime = per * totalDuration;
+            
+            // 同步音频进度
+            const audio = document.getElementById("bgMusic");
+            if (audio && audio.duration) {
+                audio.currentTime = (globalCurrentTime / 1000) % audio.duration;
+            }
+
+            // 立即检查并切换
+            const currentSegment = timeSegments.find(s => globalCurrentTime >= s.start && globalCurrentTime <= s.end);
+            if (currentSegment && currentSegment.bandIndex !== currentIndex) {
+                currentIndex = currentSegment.bandIndex;
+                updateUI(bands[currentIndex], false);
+            }
+            if (globalCurrentTime < totalDuration) {
+                isPaused = false;
+                if (audio) audio.play();
+            }
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "f" || e.key === "F" || e.key === "F11") {
+                // 如果是 F11，阻止默认行为以使用我们自定义的全屏逻辑控制 UI 隐藏
+                if (e.key === "F11") e.preventDefault();
+                
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                }
+            }
+
+            const audio = document.getElementById("bgMusic");
+            if (e.key === " ") { // 空格暂停/播放 或 开始准备页
+                if (!isStarted) {
+                    isStarted = true;
+                    startIntroSystem(); // 开始准备系统
+                    return;
+                }
+                isPaused = !isPaused;
+                if (audio) {
+                    if (isPaused) audio.pause();
+                    else audio.play();
+                }
+            } else if (e.key === "ArrowLeft") {
+                const nextIdx = Math.max(0, currentIndex - 1);
+                globalCurrentTime = timeSegments[nextIdx].start;
+                if (audio) audio.currentTime = globalCurrentTime / 1000;
+                isPaused = false;
+                if (audio) audio.play();
+            } else if (e.key === "ArrowRight") {
+                const nextIdx = Math.min(bands.length - 1, currentIndex + 1);
+                globalCurrentTime = timeSegments[nextIdx].start;
+                if (audio) audio.currentTime = globalCurrentTime / 1000;
+                isPaused = false;
+                if (audio) audio.play();
+            }
+        });
+
+        function startIntroSystem() {
+            const audio = document.getElementById("bgMusic");
+            const overlay = document.getElementById("introOverlay");
+            const pCanvas = document.getElementById("particles-canvas");
+
+            // 移除提示文字
+            overlay.classList.add("started"); 
+
+            // 在等待 3 秒期间，静默“播放再暂停”以绕过浏览器策略，但不发出声音
+            if (audio) {
+                audio.muted = true;
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.muted = false;
+                    audio.currentTime = 0;
+                }).catch(e => console.log("Audio prep failed", e));
+            }
+
+            setTimeout(() => {
+                overlay.style.opacity = "0";
+                isPaused = false; 
+                pCanvas.style.zIndex = "0"; 
+
+                if (audio) {
+                    audio.play().catch(e => console.log("Audio play failed", e));
+                }
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                }, 1000);
+            }, CONFIG.INTRO_WAIT_TIME);
+        }
+
+        window.onload = function() {
+            // 在正式播放前就开始渲染粒子和雷达（静态背景）
+            requestAnimationFrame(tick);
+
+            // 拖拽图片下载功能
+            window.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && currentIndex >= 0) {
+                    const file = files[0];
+                    if (file.type.startsWith('image/')) {
+                        const currentBandName = bands[currentIndex].name;
+                        const extension = file.name.split('.').pop();
+                        const newFileName = `${currentBandName}.${extension}`;
+
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const link = document.createElement('a');
+                            link.href = event.target.result;
+                            link.download = newFileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
