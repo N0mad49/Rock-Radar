@@ -30,7 +30,7 @@ const CONFIG = {
     ANIM_DURATION: 1500, // 切换显示时，雷达数值增长动画的频率（毫秒）
     // 是否启用特殊的数值格式化（如雷达图的实际值在 11-19 时显示为 "10+"）
     ENABLE_SPECIAL_FORMAT: true, 
-    DEFAULT_DURATION: 15000, // 默认的展示时长（毫秒）
+    DEFAULT_DURATION: 5000, // 默认的展示时长（毫秒）
 };
 ```
 
