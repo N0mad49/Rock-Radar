@@ -30,6 +30,7 @@ const CONFIG = {
     ANIM_DURATION: 1500, // 切换显示时，雷达数值增长动画的频率（毫秒）
     // 是否启用特殊的数值格式化（如雷达图的实际值在 11-19 时显示为 "10+"）
     ENABLE_SPECIAL_FORMAT: true, 
+    DEFAULT_DURATION: 15000, // 默认的展示时长（毫秒）
 };
 ```
 
@@ -44,7 +45,7 @@ const CONFIG = {
     scores: [10, 8, 9, 7, 8, 8], // 对应的六个维度分值
     desc: "关于此项的详细描述文字",
     colorIndex: 0, // 背景粒子的颜色，对应 COLOR_PRESETS 索引 (0-19)
-    duration: 5000              // 停留显示的时长（毫秒），默认为5000
+    duration: 5000              // 停留显示的时长（毫秒），不填则使用 CONFIG.DEFAULT_DURATION，默认为5000毫秒
 }
 ```
 示例：
