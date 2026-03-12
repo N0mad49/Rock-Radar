@@ -27,14 +27,26 @@ const CONFIG = {
     BASE_MAX_SCORES: [10, 10, 10, 10, 10, 10], 
     // 下限设定：限制各轴显示的最低分（通常设为 0）
     MIN_SCORES: [0, 0, 0, 0, 0, 0], 
-    ANIM_DURATION: 1500, // 切换显示时，雷达数值增长动画的频率（毫秒）
+    // 切换显示时，雷达各项数值生长动画的过渡时间 (ms)
+    ANIM_DURATION: 1500, 
     // 是否启用特殊的数值格式化（如雷达图的实际值在 11-19 时显示为 "10+"）
     ENABLE_SPECIAL_FORMAT: true, 
-    DEFAULT_DURATION: 5000, // 默认的展示时长（毫秒）
+    // 默认每页的的展示时长 (ms)
+    DEFAULT_DURATION: 5000, 
+     // 是否显示描述文字(乐评)
+    SHOW_DESC: true,
+    // 图片默认缩放比例 (1.0 为原始大小)
+    IMAGE_SCALE: 1.0, 
+    // 哪些维度显示为百分数（例如 0.7 变为 70%）。数组长度 6，true 表示显示为百分数，false 表示显示为普通数字
+    USE_PERCENTAGE: [false, false, false, false, false, false],
+    // 维度名称距离雷达图外圈的距离 (px)，默认 80
+    LABEL_MARGIN: 80, 
+    // 是否根据 points 中写的小数位数自动控制显示的小数精度
+    USE_AUTO_PRECISION: true, 
+    // 是否将评分数值显示在维度名称下方
+    SHOW_SCORE_UNDER_NAME: true, 
 };
 ```
-
-
 
 ### 2. 添加数据（角色/乐队/项目）
 在 `index.html` 中搜索并修改 `const bands = [...]`。每个对象代表一个展示页：
@@ -45,7 +57,7 @@ const CONFIG = {
     scores: [10, 8, 9, 7, 8, 8], // 对应的六个维度分值
     desc: "关于此项的详细描述文字",
     colorIndex: 0, // 背景粒子的颜色，对应 COLOR_PRESETS 索引 (0-19)
-    duration: 5000              // 停留显示的时长（毫秒），不填则使用 CONFIG.DEFAULT_DURATION，默认为5000毫秒
+    duration: 5000  // 停留显示的时长（毫秒），不填则使用 CONFIG.DEFAULT_DURATION，默认为5000毫秒
 }
 ```
 示例：
@@ -57,6 +69,7 @@ const CONFIG = {
 在 `index.html` 的 `:root` 选择器中，你可以通过修改颜色变量快速切换主题色：
 - `--theme-color`: 主亮色（辉光色）
 - `--bg-color-1` / `--bg-color-2`: 渐变背景的起始与结束色
+- `mvplist` 见视频介绍
 
 ## 文件夹结构
 ```

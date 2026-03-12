@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rock Radar - 战力雷达图</title>
+    <title>CS Radar - 战力雷达图</title>
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap");
         /* 引入鸿蒙字体 (使用更稳定的全局地址) */
@@ -382,23 +382,23 @@
         const CONFIG = {
             INTRO_WAIT_TIME: 1000, // 开头准备页等待时间 (ms)
             // 雷达图各个维度的名称
-            DIM_NAMES: ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"],
+            DIM_NAMES: ["KPR", "Surviving", "ADR", "KAST", "Impact", "Rating"],
             // 六个维度的满分基准线，每个维度可单独控制
-            BASE_MAX_SCORES: [10, 10, 10, 10, 10, 10], 
+            BASE_MAX_SCORES: [0.8, 0.5, 70, 0.7, 1, 1.2], 
             // 六个维度的允许最低分数，每个维度可单独控制
             MIN_SCORES: [0, 0, 0, 0, 0, 0], 
             ANIM_DURATION: 1500, // 雷达各项数值生长动画的过渡时间 (ms)
             // 是否启用特殊的数值格式化（如雷达图的实际值在 11-19 时显示为 "10+"）
             ENABLE_SPECIAL_FORMAT: true, 
             DEFAULT_DURATION: 5000, // 默认每页的的展示时长 (ms)
-            SHOW_DESC: true, // 是否显示描述文字(乐评)
-            IMAGE_SCALE: 1.0, // 图片默认缩放比例 (1.0 为原始大小)
+            SHOW_DESC: false, // 是否显示描述文字(乐评)
+            IMAGE_SCALE: 1.5, // 图片默认缩放比例 (1.0 为原始大小)
             // 哪些维度显示为百分数（例如 0.7 变为 70%）。数组长度 6，true 表示显示为百分数，false 表示显示为普通数字
-            USE_PERCENTAGE: [false, false, false, false, false, false],
-            LABEL_MARGIN: 80, // 维度名称距离雷达图外圈的距离 (px)，默认 80
+            USE_PERCENTAGE: [false, true, false, true, false, false],
+            LABEL_MARGIN: 20, // 维度名称距离雷达图外圈的距离 (px)，默认 80
             // 是否根据 points 中定义的位数自动控制显示精度（例如写 8.5 就显示 8.5，写 8 就显示整数）
             USE_AUTO_PRECISION: true, 
-            SHOW_SCORE_UNDER_NAME: false, // 是否将评分数值显示在维度名称下方
+            SHOW_SCORE_UNDER_NAME: true, // 是否将评分数值显示在维度名称下方
         };
 
         function getNextColor() {
@@ -408,7 +408,7 @@
             return c;
         }
 
-        const mvplist = ["The Beatles"];
+        const mvplist = ["Donk"];
 
         // ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"]
         // 可选属性: 
@@ -416,10 +416,7 @@
         // duration: 该条目持续显示时间 (ms)，默认由 CONFIG.DEFAULT_DURATION 决定
         const namelist = [
 
-{ name: "The Beatles", points: [15, 15, 10, 20, 10, 10], desc: "无需多言", colorIndex: 12 ,duration: 6000 },
-{ name: "Nirvana", points: [9, 8, 9, 12, 9, 7], desc: "xqcl" },
-{ name: "Radiohead", points: [13, 8, 9, 10, 8, 12], desc: "rym亲爹。我一直是idm粉丝啊" },
-{ name: "Bob Dylan", points: [14, 4, 15, 14, 1, 2], desc: "诺贝尔文学奖得主的含金量，要歌词有歌词，唱功有歌词" },
+{ name: "Donk", points: [0.99, 0.34, 101.4, 0.782, 1.75, 1.49], desc: "无需多言", colorIndex: 12 ,duration: 6000 }
         ];
 
         const bands = namelist.map(b => {
