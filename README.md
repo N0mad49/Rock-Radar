@@ -1,7 +1,7 @@
 # Rock Radar - 战力雷达图 / 动态评级面板
 
 类似jojo面板的战力评级展示系统。通过高度自定义的六维雷达图、粒子动画和流畅的视觉过渡效果，生动呈现不同角色的各项能力数值。
-
+解释视频：https://www.bilibili.com/video/BV1vpckzhEJJ?vd_source=e933b15469ba782736f46bb7dfec1577
 ![example](https://github.com/user-attachments/assets/1a9f31da-f0da-4b42-9bad-c443429b0344)
 
 ## 核心特性
