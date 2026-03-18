@@ -2,6 +2,7 @@
 
 类似jojo面板的战力评级展示系统。通过高度自定义的六维雷达图、粒子动画和流畅的视觉过渡效果，生动呈现不同角色的各项能力数值。
 
+介绍视频：https://www.bilibili.com/video/BV1vpckzhEJJ?vd_source=e933b15469ba782736f46bb7dfec1577
 ![example](https://github.com/user-attachments/assets/1a9f31da-f0da-4b42-9bad-c443429b0344)
 
 ## 核心特性
@@ -20,8 +21,16 @@
 
 ```javascript
 const CONFIG = {
-    INTRO_WAIT_TIME: 5000, // 开场页面的等待时间（毫秒）
-    // 维度名称：修改这里可改变雷达图的六个能力节点名称
+    RADAR_SCALE: 1.0,            // 雷达图底图大小缩放比例 (默认 1.0)
+    RADAR_GRID_LEVELS: 5,        // 雷达图底图行数（圈数）
+    RADAR_GRID_LINE_WIDTH: 3,    // 雷达图底图线条粗细
+    RADAR_GRID_LINE_OPACITY: 0.2, // 雷达图底图线条透明度
+    PARTICLE_OPACITY_MULT: 2.0,  // 背景粒子特效透明度倍率
+    PARTICLE_SIZE_MULT: 2.0,     // 背景粒子特效大小倍率
+    VERTEX_COUNT: 6,             // 雷达图顶点数（默认为 6 边形，可改为 8 边形等）,一定要把DIM_NAMES等数组内容也改成对应的个数!
+    INTRO_WAIT_TIME: 5000,       // 开场页面的等待时间（毫秒）
+    
+    // 维度名称：修改这里可改变雷达图的各个能力节点名称
     DIM_NAMES: ["创新性", "旋律", "歌词", "影响力", "主唱", "乐器"],
     // 满分基准：设置雷达图内圈各轴建议的最大值
     BASE_MAX_SCORES: [10, 10, 10, 10, 10, 10], 
@@ -33,11 +42,11 @@ const CONFIG = {
     ENABLE_SPECIAL_FORMAT: true, 
     // 默认每页的的展示时长 (ms)
     DEFAULT_DURATION: 5000, 
-     // 是否显示描述文字(乐评)
+    // 是否显示描述文字(乐评)
     SHOW_DESC: true,
     // 图片默认缩放比例 (1.0 为原始大小)
     IMAGE_SCALE: 1.0, 
-    // 哪些维度显示为百分数（例如 0.7 变为 70%）。数组长度 6，true 表示显示为百分数，false 表示显示为普通数字
+    // 哪些维度显示为百分数（例如 0.7 变为 70%）。数组长度需与顶点数对应，true 表示显示为百分数，false 表示显示为普通数字
     USE_PERCENTAGE: [false, false, false, false, false, false],
     // 维度名称距离雷达图外圈的距离 (px)，默认 80
     LABEL_MARGIN: 80, 
